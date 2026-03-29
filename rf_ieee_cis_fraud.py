@@ -24,17 +24,19 @@ from sklearn.metrics import (
     precision_recall_curve,
     roc_curve
 )
-
 from sklearn.ensemble import RandomForestClassifier
 from typing import Dict, List, Tuple
 
-train = pandas.read_csv(r'/content/drive/MyDrive/Dataset/TrainValidationTest/IEEE-CIS/train.csv')
-validation = pandas.read_csv(r'/content/drive/MyDrive/Dataset/TrainValidationTest/IEEE-CIS/validation.csv')
-test = pandas.read_csv(r'/content/drive/MyDrive/Dataset/TrainValidationTest/IEEE-CIS/test.csv')
+
+# Importing the files
+train = pandas.read_csv(r'.............')
+validation = pandas.read_csv(r'.............')
+test = pandas.read_csv(r'.............')
 
 print(len(train) + len(validation) + len(test))
 
 """# Node Column Handling"""
+# - These node columns are used to specifically consider the GNNs requirements for the nodes. 
 
 # Identify categorical columns
 categorical_cols = train.select_dtypes(
@@ -65,8 +67,8 @@ for col in categorical_cols:
     validation[col] = validation[col].map(mapping).fillna(-1).astype(int)
     test[col] = test[col].map(mapping).fillna(-1).astype(int)
 
-"""# Random Forest Training, Validation and Testing"""
 
+""" Function for training the model """
 def train_evaluate_random_forest(
     train_df,
     val_df,
@@ -81,20 +83,9 @@ def train_evaluate_random_forest(
     paper_mode: bool = False,          # NEW
     return_test_probs: bool = False    # NEW
 ):
-    """
-    Random Forest baseline.
 
-    paper_mode=True:
-        - disables threshold tuning
-        - reports pure AUROC / PR-AUC (paper-style)
-
-    return_test_probs=True:
-        - returns test probabilities for ROC comparison
-    """
-
-    # -------------------------
-    # 0. Prepare X and y
-    # -------------------------
+    
+    # Prepare X and y
     X_train = train_df.drop(columns=[target_col])
     y_train = train_df[target_col]
 
@@ -103,10 +94,9 @@ def train_evaluate_random_forest(
 
     X_test = test_df.drop(columns=[target_col])
     y_test = test_df[target_col]
-
-    # -------------------------
+    
     # 1. Model
-    # -------------------------
+    
     rf = RandomForestClassifier(
         n_estimators=n_estimators,
         max_depth=max_depth,
@@ -116,21 +106,18 @@ def train_evaluate_random_forest(
         random_state=random_state,
     )
 
-    # -------------------------
     # 2. Fit
-    # -------------------------
+    
     rf.fit(X_train, y_train)
 
-    # -------------------------
     # 3. Probability predictions
-    # -------------------------
+    
     train_probs = rf.predict_proba(X_train)[:, 1]
     val_probs   = rf.predict_proba(X_val)[:, 1]
     test_probs  = rf.predict_proba(X_test)[:, 1]
 
-    # -------------------------
+
     # 4. Paper-style metrics (threshold-free)
-    # -------------------------
     train_metrics = {
         "roc_auc": roc_auc_score(y_train, train_probs),
         "pr_auc": average_precision_score(y_train, train_probs),
@@ -146,9 +133,7 @@ def train_evaluate_random_forest(
         "pr_auc": average_precision_score(y_test, test_probs),
     }
 
-    # -------------------------
     # 5. Deployment-style metrics (optional)
-    # -------------------------
     best_t = None
     test_preds = None # Initialize test_preds
 
@@ -175,9 +160,8 @@ def train_evaluate_random_forest(
             "specificity": tn / (tn + fp) if (tn + fp) > 0 else 0.0,
         })
 
-    # -------------------------
     # 6. Return
-    # -------------------------
+    
     out = {
         "model": rf,
         "train_metrics": train_metrics,
@@ -200,6 +184,8 @@ def train_evaluate_random_forest(
 
     return out
 
+
+""" Function """
 def run_model_with_seeds_collect(
     train,
     validation,
@@ -210,20 +196,6 @@ def run_model_with_seeds_collect(
     target_col="isFraud",
     verbose=True,
 ):
-    """
-    Minimal multi-seed runner.
-
-    trainer_fn must accept a seed and return a dict like your current pipeline:
-      res = trainer_fn(seed)
-      res['test_metrics'] -> dict of metrics (any keys)
-      res['predictions_df'] -> df containing target_col + probability column
-        OR res['test_probs'] + res['y_test']
-
-    Returns:
-      avg_metrics_dict: dict of averaged metrics across seeds (numeric columns only)
-      pr_auc_df: DataFrame with columns [seed, pr_auc]
-      avg_probs_df: DataFrame with columns [target_col, avg_prob]
-    """
 
     def _extract_y_and_probs(res: dict):
         # Prefer explicit arrays if available
@@ -294,9 +266,9 @@ def run_model_with_seeds_collect(
         pr_auc_rows.append({"seed": seed, "pr_auc": pr_auc})
         probs_list.append(probs)
 
-    # -------------------------
+    
     # DataFrames
-    # -------------------------
+
     metrics_df = pd.DataFrame(all_metrics_rows)
     pr_auc_df = pd.DataFrame(pr_auc_rows)
 
@@ -334,11 +306,9 @@ avg_metrics, pr_auc_df, avg_probs_df, metrics_df = run_model_with_seeds_collect(
     verbose=True
 )
 
-avg_metrics
 
+""" Metric Saves """
 pr_auc_df.to_csv('/content/drive/MyDrive/Dataset/predictedones/randomfores/prauc.csv')
-
 avg_probs_df.to_csv('/content/drive/MyDrive/Dataset/predictedones/randomfores/avgProbs.csv')
 
-pr_auc_df
 
