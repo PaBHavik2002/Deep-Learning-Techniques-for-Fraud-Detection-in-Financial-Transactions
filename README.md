@@ -159,13 +159,12 @@ This ensures that performance differences are:
 
 ---
 
-## Author
-**Bhavik Parmar**
+## Author & Citation
 
----
+**Author**  
+Bhavik Parmar  
 
-## Citation
-
+**Citation**  
 Parmar, B. L. (2026, March 11). *Deep learning techniques for fraud detection* [Essay; Electronic].  
 https://ucw.arcabc.ca/mbar-661/deep-learning-techniques-fraud-detection
 
